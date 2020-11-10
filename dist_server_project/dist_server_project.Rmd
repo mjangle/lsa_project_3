@@ -64,6 +64,7 @@ remote_es_time %>%
     ggplot(aes(x = X2)) +
     geom_histogram(binwidth = 1) +
     theme_bw()
+
 ```
 
 
@@ -100,6 +101,8 @@ javaResults03$X1 %>%
 
 
 # Clipper Java Results
+
+
 
 We started analysis by looking at a point plot of the data over time. 
 
