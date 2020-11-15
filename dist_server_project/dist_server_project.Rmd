@@ -20,7 +20,7 @@ javaResults03 <- read_csv("results/javaResults03.csv",
     col_names = FALSE)
 javaResultsGermany01 <- read_csv("results/javaResultsGermany01.csv", 
     col_names = FALSE)
-javaResultsGermany02 <- read_csv("results/javaResultsGermany03.csv", 
+javaResultsGermany02 <- read_csv("results/javaResultsGermany02.csv", 
     col_names = FALSE)
 javaResultsGermany03 <- read_csv("results/javaResultsGermany03.csv", 
     col_names = FALSE)
@@ -74,6 +74,8 @@ remote_es_time %>%
 After some consideration we became concerned that the differences in compile time on the each server may have influenced our results and rendered them void. 
 
 We set up a second experiment where we transferred in the same manner a 2 MB text file, but instead of measuring total time to compile and transfer we only measured the time that it took to transfer using a Java method to measure the start and stop time of the transfer file method. We nested this method in a loop and ran it 1000 times on Clipper, the German and the Spanish server. We ran these tests 3 times each for each server and stored the results in corresponding csv files. The Clipper test was ran as a baseline to see best case scenarios for the transfer. The file size chose was intended to be large enough to be significant but not too large to be overwhelming for the remote servers. We ran the tests 3 times on each server to ensure we could have a large enough sample size to make significant analysis. 
+
+
 
 ```{r,echo=FALSE, results='hide', message=FALSE}
 
@@ -307,6 +309,8 @@ ggplot(aes(x = X2)) +
 
 As can be seen the combined dataset approaches a normal distribution. 
 
+---
+---
 
 # German Server Results
 
@@ -367,7 +371,7 @@ javaResultsGermany03 %>%
     ylab("Transfer in Millisecond") +
     theme_bw()
 ```
-
+As can be seen the time series data looks similar to our previous test. There seems to be a spike in activity that happens around a minute in for all three tests but all three seem to follow a similar pattern. 
 
 ```{r, echo=FALSE, results='hide', message=FALSE,fig.height=3}
 javaResultsGermany01 %>% 
@@ -395,14 +399,15 @@ javaResultsGermany03 %>%
     xlab("Transfer Time in Milliseconds")
 ```
 
+When making our histograms there is an very apparent difference from our first results on Clipper. All three tests run on the German server seem to group around similar transfer time intervals. 
+
 ```{r, echo=FALSE, results='hide', message=FALSE, fig.height=3}
 
 outliers1 <- boxplot(javaResultsGermany01$X2, plot=FALSE)$out
 
 x <-javaResultsGermany01
-x <- x[-which(javaResultsGermany01$X2 %in% outliers1),]
-
-x %>% 
+javaResultsGermany01 <- x[-which(javaResultsGermany01$X2 %in% outliers1),]
+javaResultsGermany01 %>% 
     ggplot(aes(x = X2)) +
     geom_histogram(binwidth = 5) +
     theme_bw() +
@@ -413,8 +418,8 @@ x %>%
 outliers2 <- boxplot(javaResultsGermany02$X2, plot=FALSE)$out
 
 x2 <-javaResultsGermany02
-x2 <- x2[-which(javaResultsGermany02$X2 %in% outliers2),]
-x2 %>% 
+javaResultsGermany02 <- x2[-which(javaResultsGermany02$X2 %in% outliers2),]
+javaResultsGermany02 %>% 
     ggplot(aes(x = X2)) +
     geom_histogram(binwidth = 5) +
     theme_bw() +
@@ -424,12 +429,49 @@ x2 %>%
 outliers3 <- boxplot(javaResultsGermany03$X2, plot=FALSE)$out
 
 x3 <-javaResultsGermany03
-x3 <- x3[-which(javaResultsGermany03$X2 %in% outliers3),]
-x3 %>% 
+javaResultsGermany03 <- x3[-which(javaResultsGermany03$X2 %in% outliers3),]
+javaResultsGermany03 %>% 
     ggplot(aes(x = X2)) +
     geom_histogram(binwidth = 5) +
     theme_bw() +
     labs(title = "Germany Transfer Time Historgram 3") +
+    xlab("Transfer Time in Milliseconds")
+```
+After removing outliers as we did before and grouping these into larger bins (width of 5) the grouping is even more apparent. There seems to be groupings around 275 milliseconds, 375 milliseconds, and 475 milliseconds on tests 1 and 2. While this does not seem to be exactly normally distributed, it is a consistent distribution. Test 3 seems to be normally distributed after removing the outliers. Running the t-tests as before seems to indicate all these tests belong to the same underlying distribution.
+
+```{r,  echo=FALSE}
+ttest_java_german_results_1_2 <- t.test(javaResultsGermany01$X2, javaResultsGermany02$X2)
+ttest_java_german_results_1_2
+```
+
+```{r,  echo=FALSE}
+ttest_java_german_results_2_3 <- t.test(javaResultsGermany02$X2, javaResultsGermany03$X2)
+ttest_java_german_results_2_3
+```
+
+```{r,  echo=FALSE}
+ttest_java_german_results_1_3 <- t.test(javaResultsGermany01$X2, javaResultsGermany03$X2)
+ttest_java_german_results_1_3
+```
+As we can from our two sample t-test's the means for Test 1 = 403.6, Test 2 = 396.04, and  Test 3 = 378.12 and all three tests fall below a significant level of .05. So that means in all three cases we can assume test 1, 2, and 3 are all part of the same underlying distribution. 
+
+```{r, echo=FALSE}
+GermanyFinalResults <- merge(javaResultsGermany01, javaResultsGermany02, by = c('X1', 'X2'), all=TRUE)
+GermanyFinalResults <- merge(clipperFinalResults, javaResultsGermany03, by = c('X1', 'X2'), all=TRUE)
+quantile(GermanyFinalResults$X2)
+message('Max = ', max(clipperFinalResults$X2))
+message('Min = ', min(clipperFinalResults$X2))
+message('Mean = ',round(mean(clipperFinalResults$X2), digits=2))
+message('SD = ', round(sd(clipperFinalResults$X2), digits=2))
+```
+Once combined we can see 50% of all transfer time values fall between 369 and 400.5 milliseconds and our mean transfer time is 394.17 milliseconds. Our fastest time was 260 milliseconds and max was 596. 
+
+```{r, echo=FALSE, message=FALSE}
+GermanyFinalResults %>% 
+ggplot(aes(x = X2)) +
+    geom_histogram(binwidth = 1) +
+    theme_bw() +
+    labs(title = "German Transfer Time Historgram 3") +
     xlab("Transfer Time in Milliseconds")
 ```
 
@@ -472,7 +514,7 @@ javaResultsSpain01 %>%
     ylab("Transfer in Millisecond") +
     theme_bw()
 
-javaResultsGermany02 %>% 
+javaResultsSpain02 %>% 
     mutate(X1 = mdy_hms(test2)) %>% 
     ggplot(aes(x = X1, y = X2)) +
     geom_point() +
@@ -490,6 +532,8 @@ javaResultsSpain03 %>%
     ylab("Transfer in Millisecond") +
     theme_bw()
 ```
+
+
 
 
 ```{r, echo=FALSE, results='hide', message=FALSE,fig.height=3}
