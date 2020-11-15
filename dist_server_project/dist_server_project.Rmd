@@ -8,6 +8,7 @@ output: pdf_document
 library(tidyverse)
 library(ggplot2)
 library(lubridate)
+library(BSDA)
 ```
 
 ```{r ,  echo=FALSE, results='hide', message=FALSE}
@@ -72,7 +73,7 @@ remote_es_time %>%
 
 After some consideration we became concerned that the differences in compile time on the each server may have influenced our results and rendered them void. 
 
-We set up a second experiment where we transferred in the same manner a 2 MB text file, but instead of measuring total time to compile and transfer we only measured the time that it took to transfer using a Java method to measure the start and stop time of the transfer file method. We nested this method in a loop and ran it 1000 times on Clipper, the German and the Spanish server. We ran these tests 3 times each for each server and stored the results in corresponding csv files. The Clipper test was ran as a baseline to see best case scenarios for the transfer. The file size chose was intended to be large enough to be significant but not too large to be overwhelming for the remote servers. The number of times we ran the test was to ensure we could have a large enough sample size to make significant analysis. 
+We set up a second experiment where we transferred in the same manner a 2 MB text file, but instead of measuring total time to compile and transfer we only measured the time that it took to transfer using a Java method to measure the start and stop time of the transfer file method. We nested this method in a loop and ran it 1000 times on Clipper, the German and the Spanish server. We ran these tests 3 times each for each server and stored the results in corresponding csv files. The Clipper test was ran as a baseline to see best case scenarios for the transfer. The file size chose was intended to be large enough to be significant but not too large to be overwhelming for the remote servers. We ran the tests 3 times on each server to ensure we could have a large enough sample size to make significant analysis. 
 
 ```{r,echo=FALSE, results='hide', message=FALSE}
 
@@ -100,7 +101,7 @@ javaResults03$X1 %>%
 ```
 
 
-# Clipper Java Results
+# Clipper Server Results
 
 
 
@@ -167,7 +168,7 @@ javaResults03 %>%
     xlab("Transfer Time in Milliseconds")
 ```
 
-It became evident that we did have a few outliers and likely a bimodal distribution in the third set of data. To account for the outliers we used the boxplot function contained in the ggstatsplot package to remove outliers and clean up the data. The boxplot function can be used to identify outliers "which lie beyond the extremes of the whiskers". [2] After transforming the data the following were our resulting histograms. 
+It became evident that we did have a few outliers and likely a bimodal distribution in the third set of data. To account for the outliers we used the boxplot function contained in the ggstatsplot package to remove outliers and clean up the data. The boxplot function can be used to identify outliers "which lie beyond the extremes of the whiskers". [2] After removing the outliers, the following were our resulting histograms. 
 
 
 ```{r, echo=FALSE, results='hide', message=FALSE, fig.height=3}
@@ -208,20 +209,108 @@ x3 %>%
     xlab("Transfer Time in Milliseconds")
 ```
 
-As can be seen in the resulting histograms the second test on Clipper seems to approach a normal distribution. The first and third test both seem to be bimodal.  
+As can be seen in the resulting histograms the second test on Clipper seems to approach a normal distribution. The first and third test both seem to be bimodal at first. Open further examination we found that if we changed the bin width for the histograms we can see that with an adjusted bin width of 5, the first test on Clipper also seems to be normally distributed. The third test is certainly bimodal. 
 
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE, fig.height=3}
 
+outliers1 <- boxplot(javaResults01$X2, plot=FALSE)$out
+
+x <-javaResults01
+javaResults01 <- x[-which(javaResults01$X2 %in% outliers1),]
+
+javaResults01 %>% 
+    ggplot(aes(x = X2)) +
+    geom_histogram(binwidth = 5) +
+    theme_bw() +
+    labs(title = "Clipper Transfer Time Historgram 1") +
+    xlab("Transfer Time in Milliseconds")
+
+
+outliers2 <- boxplot(javaResults02$X2, plot=FALSE)$out
+
+x2 <-javaResults02
+javaResults02 <- x2[-which(javaResults02$X2 %in% outliers2),]
+javaResults02 %>% 
+    ggplot(aes(x = X2)) +
+    geom_histogram(binwidth = 5) +
+    theme_bw() +
+    labs(title = "Clipper Transfer Time Historgram 2") +
+    xlab("Transfer Time in Milliseconds")
+
+outliers3 <- boxplot(javaResults03$X2, plot=FALSE)$out
+
+x3 <-javaResults03
+javaResults03 <- x3[-which(javaResults03$X2 %in% outliers3),]
+javaResults03 %>% 
+    ggplot(aes(x = X2)) +
+    geom_histogram(binwidth = 5) +
+    theme_bw() +
+    labs(title = "Clipper Transfer Time Historgram 3") +
+    xlab("Transfer Time in Milliseconds")
 ```
 
-```{r}
-mean(javaResults01$X2)
-mean(javaResults02$X2)
-mean(javaResults03$X2)
+After we removed the outliers and confirmed that the first two data sets were normally distributed we needed ensure that the first and second test on clipper accurately represent the same underlying distribution. We chose a t-test to compare the first and the second dataset, because a t-test can be used to determine if there is a significant difference between the means of two groups. First we'll assume a null hypothesis which is that Test 1 = Test 2 , Test 2 = Test 3, and Test 1 = Test 3, that is the data from three separate tests are = and there is no statistical difference between them. Our Alternate Hypothesis will be that Test 1 != Test 2 , Test 2 != Test 3, and Test 1 != Test 3, or that is there is a statistically significant difference between the three sets of data. 
+
+---
+---
+
+```{r,  echo=FALSE}
+ttest_java_results_1_2 <- t.test(javaResults01$X2, javaResults02$X2)
+ttest_java_results_1_2
 ```
+
+
+---
+---
+
+
+```{r,  echo=FALSE}
+ttest_java_results_2_3 <- t.test(javaResults02$X2, javaResults03$X2)
+ttest_java_results_2_3
+```
+
+
+---
+---
+
+
+```{r,  echo=FALSE}
+ttest_java_results_1_3 <- t.test(javaResults01$X2, javaResults03$X2)
+ttest_java_results_1_3
+```
+
+As can be seen in the results the mean of the first test was 144.973 and the mean of the second test was 144.859. The p-value  was .8258 indicating the underlying distributions are similar and we can not reject a null hypothesis in this instance. Our second t-test has an extremely low p-value (2.2e-16) and shows a sample mean of 144.859 for Test 1 and 130.115 for Test 2. This low p-value indicates that we should reject the null hypothesis. There is a statistically significant difference between our results in Test 2 and our results in Test 3. Likewise when comparing Test 1 and Test 3 we get similar results with a p-value of 2.2e-16. With all that in mind we can conclude that test's 1 and 2 belong to the same underlying distribution and will be ok to use when comparing the performance of other servers. As test 3 was bimodal and did not fit with Test 1 and Test 2 we will not use Test 3 as a baseline or include it in further analysis. 
+
+---
+---
+
+```{r, echo=FALSE}
+clipperFinalResults <- merge(javaResults01, javaResults02, by = c('X1', 'X2'), all=TRUE)
+quantile(clipperFinalResults$X2)
+message('Max = ', max(clipperFinalResults$X2))
+message('Min = ', min(clipperFinalResults$X2))
+message('Mean = ',round(mean(clipperFinalResults$X2), digits=2))
+message('SD = ', round(sd(clipperFinalResults$X2), digits=2))
+```
+
+
+So our final results for best case scenario transfer time is a mean time of 144.92, with a max time of 324 milliseconds and a min time 144 milliseconds. Our standard deviation is 11.58 and 50% of all our values fall between 139 and 151 milliseconds. 
+
+```{r, echo=FALSE, message=FALSE}
+clipperFinalResults %>% 
+ggplot(aes(x = X2)) +
+    geom_histogram(binwidth = 1) +
+    theme_bw() +
+    labs(title = "Clipper Transfer Time Historgram 3") +
+    xlab("Transfer Time in Milliseconds")
+```
+
+As can be seen the combined dataset approaches a normal distribution. 
 
 
 # German Server Results
+
+Having established a baseline we ran the same tests on the German server
 
 ```{r,echo=FALSE, results='hide', message=FALSE}
 
