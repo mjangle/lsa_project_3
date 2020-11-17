@@ -257,7 +257,7 @@ After we removed the outliers and confirmed that the first two data sets were no
 ---
 
 ```{r,  echo=FALSE}
-ttest_java_results_1_2 <- t.test(javaResults01$X2, javaResults02$X2)
+ttest_java_results_1_2 <- t.test(javaResults01$X2, javaResults02$X2, var.equal=TRUE)
 ttest_java_results_1_2
 ```
 
@@ -267,7 +267,7 @@ ttest_java_results_1_2
 
 
 ```{r,  echo=FALSE}
-ttest_java_results_2_3 <- t.test(javaResults02$X2, javaResults03$X2)
+ttest_java_results_2_3 <- t.test(javaResults02$X2, javaResults03$X2, var.equal=TRUE)
 ttest_java_results_2_3
 ```
 
@@ -277,7 +277,7 @@ ttest_java_results_2_3
 
 
 ```{r,  echo=FALSE}
-ttest_java_results_1_3 <- t.test(javaResults01$X2, javaResults03$X2)
+ttest_java_results_1_3 <- t.test(javaResults01$X2, javaResults03$X2, var.equal=TRUE)
 ttest_java_results_1_3
 ```
 
@@ -303,7 +303,7 @@ clipperFinalResults %>%
 ggplot(aes(x = X2)) +
     geom_histogram(binwidth = 1) +
     theme_bw() +
-    labs(title = "Clipper Transfer Time Historgram 3") +
+    labs(title = "Clipper Final Transfer Times") +
     xlab("Transfer Time in Milliseconds")
 ```
 
@@ -440,38 +440,38 @@ javaResultsGermany03 %>%
 After removing outliers as we did before and grouping these into larger bins (width of 5) the grouping is even more apparent. There seems to be groupings around 275 milliseconds, 375 milliseconds, and 475 milliseconds on tests 1 and 2. While this does not seem to be exactly normally distributed, it is a consistent distribution. Test 3 seems to be normally distributed after removing the outliers. Running the t-tests as before seems to indicate all these tests belong to the same underlying distribution.
 
 ```{r,  echo=FALSE}
-ttest_java_german_results_1_2 <- t.test(javaResultsGermany01$X2, javaResultsGermany02$X2)
+ttest_java_german_results_1_2 <- t.test(javaResultsGermany01$X2, javaResultsGermany02$X2, var.equal=TRUE)
 ttest_java_german_results_1_2
 ```
 
 ```{r,  echo=FALSE}
-ttest_java_german_results_2_3 <- t.test(javaResultsGermany02$X2, javaResultsGermany03$X2)
+ttest_java_german_results_2_3 <- t.test(javaResultsGermany02$X2, javaResultsGermany03$X2, var.equal=TRUE)
 ttest_java_german_results_2_3
 ```
 
 ```{r,  echo=FALSE}
-ttest_java_german_results_1_3 <- t.test(javaResultsGermany01$X2, javaResultsGermany03$X2)
+ttest_java_german_results_1_3 <- t.test(javaResultsGermany01$X2, javaResultsGermany03$X2, var.equal=TRUE)
 ttest_java_german_results_1_3
 ```
-As we can from our two sample t-test's the means for Test 1 = 403.6, Test 2 = 396.04, and  Test 3 = 378.12 and all three tests fall below a significant level of .05. So that means in all three cases we can assume test 1, 2, and 3 are all part of the same underlying distribution. 
+As we can from our two sample t-test's the means for Test 1 = 403.6, Test 2 = 396.04, and  Test 3 = 378.12 and all three tests fall below a significant level of .05. This low significance level indicates that all three are not part of the same underlying distribution. 
 
 ```{r, echo=FALSE}
 GermanyFinalResults <- merge(javaResultsGermany01, javaResultsGermany02, by = c('X1', 'X2'), all=TRUE)
-GermanyFinalResults <- merge(clipperFinalResults, javaResultsGermany03, by = c('X1', 'X2'), all=TRUE)
+GermanyFinalResults <- merge(GermanyFinalResults, javaResultsGermany03, by = c('X1', 'X2'), all=TRUE)
 quantile(GermanyFinalResults$X2)
-message('Max = ', max(clipperFinalResults$X2))
-message('Min = ', min(clipperFinalResults$X2))
-message('Mean = ',round(mean(clipperFinalResults$X2), digits=2))
-message('SD = ', round(sd(clipperFinalResults$X2), digits=2))
+message('Max = ', max(GermanyFinalResults$X2))
+message('Min = ', min(GermanyFinalResults$X2))
+message('Mean = ',round(mean(GermanyFinalResults$X2), digits=2))
+message('SD = ', round(sd(GermanyFinalResults$X2), digits=2))
 ```
-Once combined we can see 50% of all transfer time values fall between 369 and 400.5 milliseconds and our mean transfer time is 394.17 milliseconds. Our fastest time was 260 milliseconds and max was 596. 
+Once combined we can see 50% of all transfer time values fall between 367 and 454 milliseconds and our mean transfer time is 392.98 milliseconds. Our fastest time was 260 milliseconds and max transfer time was 628, the standard deviation was 70.35.
 
 ```{r, echo=FALSE, message=FALSE}
 GermanyFinalResults %>% 
 ggplot(aes(x = X2)) +
     geom_histogram(binwidth = 1) +
     theme_bw() +
-    labs(title = "German Transfer Time Historgram 3") +
+    labs(title = "German Final Transfer Times") +
     xlab("Transfer Time in Milliseconds")
 ```
 
@@ -501,6 +501,9 @@ javaResultsSpain03$X1 %>%
     test3
 
 ```
+
+After we ran our tests on the German server we ran our tests last on the server in Spain. As before we plotted the time series data and also plotted the histograms. 
+
 
 ```{r, echo=FALSE, results='hide', message=FALSE, fig.height=3}
 
@@ -533,7 +536,7 @@ javaResultsSpain03 %>%
     theme_bw()
 ```
 
-
+The time series data for the Spain server seems to show quite a bit more variation than either Clipper or the German server. 
 
 
 ```{r, echo=FALSE, results='hide', message=FALSE,fig.height=3}
@@ -561,6 +564,9 @@ javaResultsSpain03 %>%
     labs(title = "Spain Transfer Time Historgram 3") +
     xlab("Transfer Time in Milliseconds")
 ```
+
+
+After looking at the histograms it would appear that the data is grouping together in a similar way to the German server, but the range seems like it may be greater. To check this we'll first remove the outliers as we have for all data sets so far. 
 
 ```{r, echo=FALSE, results='hide', message=FALSE, fig.height=3}
 
@@ -599,10 +605,76 @@ x3 %>%
     labs(title = "Spain Transfer Time Historgram 3") +
     xlab("Transfer Time in Milliseconds")
 ```
+After removing outliers and regraphing out histogram it does appear that our overall x-axis has a greater range than what we saw with the german data. 
+
+```{r}
+range(javaResultsSpain01$X2)
+range(javaResultsSpain02$X2)
+range(javaResultsSpain03$X2)
+```
+```{r}
+range(javaResultsGermany01$X2)
+range(javaResultsGermany02$X2)
+range(javaResultsGermany03$X2)
+```
+On just ranges the difference is very apparent. The Spanish server results seem to have a wider range of transfer times. 
+
+```{r,  echo=FALSE}
+ttest_java_spain_results_1_2 <- t.test(javaResultsSpain01$X2, javaResultsSpain02$X2, var.equal=TRUE)
+ttest_java_spain_results_1_2
+```
+
+```{r,  echo=FALSE}
+ttest_java_spain_results_2_3 <- t.test(javaResultsSpain02$X2, javaResultsSpain03$X2, var.equal=TRUE)
+ttest_java_spain_results_2_3
+```
+
+```{r,  echo=FALSE}
+ttest_java_spain_results_1_3 <- t.test(javaResultsSpain01$X2, javaResultsSpain03$X2, var.equal=TRUE)
+ttest_java_spain_results_1_3
+```
+As with the german results all three t-tests indicate that we will reject the null hypothesis, these tests do not belong to the same underlying distribution. 
+
+```{r, echo=FALSE}
+spainFinalResults <- merge(javaResultsSpain01, javaResultsSpain02, by = c('X1', 'X2'), all=TRUE)
+spainFinalResults <- merge(spainFinalResults, javaResultsSpain03, by = c('X1', 'X2'), all=TRUE)
+quantile(spainFinalResults$X2)
+message('Max = ', max(spainFinalResults$X2))
+message('Min = ', min(spainFinalResults$X2))
+message('Mean = ',round(mean(spainFinalResults$X2), digits=2))
+message('Range =') 
+range(spainFinalResults$X2)
+```
+These results again seem to differ quite a bit from the German server results. The mean time is 748.32 between all three sets, which is significantly more than the German server which was approximately 392 milliseconds. The max transfer of 2421 milliseconds is the highest transfer time we've encountered for any of our tests.  Our range also shows quite a bit of variance from a min transfer time of 287 to 2421 milliseconds. 
+
+
+When we plot the final data we can see the data does not seem to approach a normal distribution but is very right skewed. This could be for a number of reasons (bottlenecking of either the CPU or network at different times of our tests), but ultimately this data seems to all fall within the same distribution. 
+
 
 # Hypothesis Testing
 
-# Conclusion
+With our data finally cleaned, examined and grouped we can start to look at the initial question of this project, is there a difference between transfer times between the German and Spanish server. 
+
+To test this we took our cleaned data and ran a t-test. 
+
+```{r,  echo=FALSE}
+finalResults <- z.test(spainFinalResults$X2, GermanyFinalResults$X2, var.equal=TRUE) 
+finalResults
+```
+To our surprise we got an extremely low final p-value, indicating we should not reject the null hypothesis. The German data and the Spanish data were part of the same underlying distribution. 
+
+To further examine this we took the resulting data and coombined them into a dataframe to plot into a histogram. 
+
+```{r, echo=FALSE, message=FALSE}
+finalHistResults <- merge(GermanyFinalResults, spainFinalResults, by )
+
+FinalHistResults %>% 
+ggplot(aes(x = X2)) +
+    geom_histogram(binwidth = 15) +
+    theme_bw() +
+    labs(title = "Spain Final Transfer Times") +
+    xlab("Transfer Time in Milliseconds")
+```
 
  [1] “CORBA FAQ.” [Online]. Available: https://corba.org/faq.htm.
  
